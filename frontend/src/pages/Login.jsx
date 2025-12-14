@@ -9,12 +9,18 @@ const Login = () => {
     const {loginUser} = useAuth()
     const navigate = useNavigate()
 
-    const handleSubmit = async (e)=>{
-        e.preventdefault()
-        const res = await login(form)
-        loginUser(res.data.token, res.data.user)
-        navigate("/")
-    }
+    const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await login(form);
+    loginUser(res.data.token, res.data.user);
+
+    navigate("/", { replace: true });
+  } catch (err) {
+    alert(err.response?.data?.message || "Login failed");
+  }
+};
+
   return (
     <div className="flex justify-center mt-20">
         <form 

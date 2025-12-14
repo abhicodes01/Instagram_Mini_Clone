@@ -8,3 +8,11 @@ export const unfollowUser = (id) =>
 
 export const getUserPosts = (id) =>
   axiosInstance.get(`/users/${id}/posts`);
+
+export const searchUsers = (query) =>
+  axiosInstance.get(`/users/search?q=${query}`);
+
+export const getUserProfile = (id) =>
+  axiosInstance.get(`/users/${id}/profile`);
+
+

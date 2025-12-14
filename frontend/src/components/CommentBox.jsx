@@ -4,34 +4,66 @@ import { addComment, getComments } from "../api/comment.api";
 const CommentBox = ({ postId }) => {
   const [comments, setComments] = useState([]);
   const [text, setText] = useState("");
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     getComments(postId).then((res) => setComments(res.data));
   }, [postId]);
 
-  const handleAdd = async () => {
-    const res = await addComment(postId, text);
-    setComments([...comments, res.data]);
-    setText("");
-  };
+  const handleAddComment = async () => {
+  if (!text.trim()) return;
+
+  console.log("Posting comment:", text);
+
+  const res = await addComment(postId, text);
+
+  console.log("Comment response:", res.data);
+
+  setComments((prev) => [...prev, res.data]);
+  setText("");
+};
+
+
+  const visibleComments = showAll
+    ? comments
+    : comments.slice(0, 2);
 
   return (
-    <div className="mt-3">
-      {comments.map((c) => (
-        <p key={c._id} className="text-sm">
-          <span className="font-semibold">{c.user.name}</span>:{" "}
+    <div className="mt-3 text-sm">
+      {/* Show comments */}
+      {visibleComments.map((c) => (
+        <p key={c._id}>
+          <span className="font-semibold mr-1">
+            {c.user.name}
+          </span>
           {c.text}
         </p>
       ))}
 
-      <div className="flex mt-2 gap-2">
+      {/* Show more */}
+      {comments.length > 2 && !showAll && (
+        <button
+          className="text-gray-500 text-xs mt-1"
+          onClick={() => setShowAll(true)}
+        >
+          View all {comments.length} comments
+        </button>
+      )}
+
+      {/* Add comment */}
+      <div className="flex items-center gap-2 mt-2">
         <input
-          className="border p-1 flex-1"
+          className="flex-1 border rounded px-2 py-1 text-sm"
           placeholder="Add a comment..."
           value={text}
           onChange={(e) => setText(e.target.value)}
         />
-        <button onClick={handleAdd}>Post</button>
+        <button
+          onClick={handleAddComment}
+          className="text-blue-500 text-sm font-semibold"
+        >
+          Post
+        </button>
       </div>
     </div>
   );

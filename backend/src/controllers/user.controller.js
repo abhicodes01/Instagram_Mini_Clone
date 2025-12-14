@@ -1,59 +1,60 @@
 import User from "../models/User.model.js";
 import Post from "../models/Post.model.js";
 
-export const followUser = async(req,res) =>{
-    try {
-        const userId = req.userId
-        const targetUserId = req.params.userId
+export const followUser = async (req, res) => {
+  const userId = req.userId;
+  const targetUserId = req.params.id;
 
-        if(userId===targetUserId){
-            return res.status(400).json({message: "You cannot follow yourself"})
-        }
+  if (userId === targetUserId) {
+    return res.status(400).json({ message: "Cannot follow yourself" });
+  }
 
-        const user = await User.findById(userId)
-        const targetUser = await User.findById(targetUserId)
+  const user = await User.findById(userId);
+  const targetUser = await User.findById(targetUserId);
 
-        if(!targetUser){
-            return res.status(404).json({message: "User not found"})
-        }
+  if (!targetUser) {
+    return res.status(404).json({ message: "User not found" });
+  }
 
-        user.following.push(targetUserId)
-        targetUser.followers.push(userId)
+  if (!user.following.includes(targetUserId)) {
+    user.following.push(targetUserId);
+    targetUser.followers.push(userId);
 
-        await user.save()
-        await targetUser.save()
+    await user.save();
+    await targetUser.save();
+  }
 
-        res.json({message: "User followed successfully"})
-    } catch (error) {
-        res.status(500).json({message: "Server error"})
-    }
-}
+  res.json({
+    followersCount: targetUser.followers.length,
+    followingCount: user.following.length,
+  });
+};
 
-export const unfollowUser = async(req,res)=>{
-    try {
-        const user = req.userId
-        const targetUser = req.params.id
 
-        if(!targetUser){
-            return res.status(404).json({message:"User not founf"})
-        }
+export const unfollowUser = async (req, res) => {
+  const userId = req.userId;
+  const targetUserId = req.params.id;
 
-        user.following = user.following.filter(
-            (id) => id.toString() !== targetUserId
-        )
+  const user = await User.findById(userId);
+  const targetUser = await User.findById(targetUserId);
 
-        targetUser.followers = targetUser.followers.filter(
-            (id) => id.toString() !== userId
-        )
+  user.following = user.following.filter(
+    (id) => id.toString() !== targetUserId
+  );
 
-        await user.save()
-        await targetUser.save()
+  targetUser.followers = targetUser.followers.filter(
+    (id) => id.toString() !== userId
+  );
 
-        res.json({message: "User unfollowed successfully"})
-    } catch (error) {
-        res.status(500).json({ message: "Server error" })
-    }
-}
+  await user.save();
+  await targetUser.save();
+
+  res.json({
+    followersCount: targetUser.followers.length,
+    followingCount: user.following.length,
+  });
+};
+
 
 export const getUserPosts = async (req, res) => {
   try {
@@ -65,3 +66,43 @@ export const getUserPosts = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const searchUsers = async (req, res) => {
+  try {
+    const query = req.query.q;
+
+    if (!query) {
+      return res.json([]);
+    }
+
+    const users = await User.find({
+      name: { $regex: query, $options: "i" },
+      _id: { $ne: req.userId } // exclude self
+    }).select("name email");
+
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getUserProfile = async (req, res) => {
+  try {
+    const profileUser = await User.findById(req.params.id)
+      .select("name followers following");
+
+    if (!profileUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isFollowing = profileUser.followers.includes(req.userId);
+
+    res.json({
+      user: profileUser,
+      isFollowing,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
